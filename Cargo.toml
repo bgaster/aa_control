@@ -1,0 +1,20 @@
+[workspace]
+
+members = [ 
+    "aa",
+    "aa_vst2_plugin",
+    "standalone"
+]
+
+[profile.release]
+debug = true
+lto = true
+opt-level = 3
+
+[profile.test]
+opt-level = 3
+
+[profile.bench]
+debug = true
+lto = true
+opt-level = 3
