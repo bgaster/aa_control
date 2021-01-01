@@ -1,0 +1,32 @@
+[package]
+name = "aa_druid"
+version = "0.1.0"
+authors = ["Benedict Gaster <benedict.gaster@gmail.com>"]
+edition = "2018"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+druid = "0.6"
+log = "0.4.11"
+plist = "1.0"
+serde = "1.0"
+serde_derive = "1.0"
+serde_json = { version = "1.0.61" }
+serde_repr = { version = "0.1.6" }
+
+lopdf = "0.26.0"
+svg = "0.8.0"
+chrono = "0.4"
+
+portaudio = "0.7.0"
+midir = { git = "https://github.com/bgaster/midir", rev = "62466b93b6d61f735333304e93f117ede9b8ff91" }
+
+aa_wasmtime = { path = "../aa_wasmtime"}
+
+anyhow = { version = "1.0.32" }
+thiserror = { version = "1.0.20" }
+
+[dependencies.rimd]
+git = "https://github.com/RustAudio/rimd.git"
+rev = "54fd9bd2bd3caaa6fe1c31fbf71c0f3c6597fd1a"
