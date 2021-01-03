@@ -17,7 +17,10 @@ fn main() {
             .build()
     ).unwrap();
 
-    let aa = Box::new(AA::new(HostCallback::default())) as Box<dyn Plugin>;
+    let mut aa = Box::new(AA::new(HostCallback::default()));
 
-    println!("{:?}", aa.get_info());
+    let mut gui = aa.get_gui();
+    if let Some(mut ui) = gui {
+        ui.app_run();
+    }
 }

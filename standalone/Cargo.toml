@@ -11,7 +11,7 @@ edition = "2018"
 
 baseview = { git = "https://github.com/RustAudio/baseview.git", branch = "master" }
 iced_baseview = { git = "https://github.com/BillyDM/iced_baseview.git", branch = "main", features = ["canvas"] }
-aa = { path = "../aa", features = ["logging"] }
+aa = { path = "../aa", features = ["logging", "standalone"] }
 simplelog = { version = "0.9.0", default-features = false }
 
 vst = { path = "../../vst-rs"}

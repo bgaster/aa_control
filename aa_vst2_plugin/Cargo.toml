@@ -6,11 +6,11 @@ edition = "2018"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 [lib]
-name = "aa"
+name = "aacontrol"
 crate-type = ["cdylib"]
 
 [dependencies]
-vst = "0.2"
+vst = { path = "../../vst-rs" }
 aa = { path = "../aa" }
 
 [features]
