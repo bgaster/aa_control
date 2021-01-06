@@ -29,8 +29,12 @@ midir = { git = "https://github.com/bgaster/midir", rev = "62466b93b6d61f7353333
 
 aa_wasmtime = { path = "../../aa_wasmtime"}
 
+ag = { path = "../ag" }
+# aa_graph = { path = "../aa_graph" }
+
 anyhow = { version = "1.0.32" }
 thiserror = { version = "1.0.20" }
+
 
 #vst = "0.2"
 
@@ -46,5 +50,9 @@ simplelog = { version = "0.9.0", optional = true, default-features = false }
 # GUI
 baseview = { git = "https://github.com/RustAudio/baseview.git", branch = "master" }
 iced_baseview = { git = "https://github.com/BillyDM/iced_baseview.git", branch = "main", features = ["canvas", "image"] }
-iced_audio = { git = "https://github.com/BillyDM/iced_audio.git", branch = "main" }
+iced_audio = { path = "../../playground/iced_audio" }
+iced_native = "0.3"
+iced_graphics = { version = "0.1", features = ["canvas"] }
+
+#iced_audio = { git = "https://github.com/BillyDM/iced_audio.git", branch = "main" }
 raw-window-handle = "0.3"
