@@ -14,7 +14,7 @@ use iced_audio::{
     HSlider, IntRange, Knob, LogDBRange, Normal, VSlider, XYPad,
 };
 
-use iced_native::{ button, Button };
+use iced_native::{ button, Button, Color };
 
 #[derive(Debug, Clone)]
 pub enum Message {
@@ -35,6 +35,8 @@ pub struct AAIcedApplication {
     center_tick_mark: tick_marks::Group,
 
     nodes: ag::State<Content>,
+    nodes_created: usize,
+    focus: Option<ag::Node>,
 }
 
 impl  Application for AAIcedApplication {
@@ -61,6 +63,8 @@ impl  Application for AAIcedApplication {
 
             sync_handle,
             nodes,
+            nodes_created: 2,
+            focus: None,
         };
 
 
@@ -116,12 +120,42 @@ impl  Application for AAIcedApplication {
             VSlider::new(&mut self.v_slider_state, Message::VSliderDB)
                 .tick_marks(&self.center_tick_mark);
 
+        let focus = self.focus;
         let total_nodes = self.nodes.len();
+
         let audio_graph = AudioGraph::new(
-            &mut self.nodes,
+            &mut self.nodes, 
             |node, content| {
-                ag::Content::new(content.view(node, total_nodes))
-            })
+           
+            let is_focused = focus == Some(node);
+
+            let title = Row::with_children(vec![
+                Text::new("Node").into(),
+                Text::new(content.id.to_string())
+                    .color(if is_focused {
+                        NODE_ID_COLOR_FOCUSED
+                    } else {
+                        NODE_ID_COLOR_UNFOCUSED
+                    })
+                    .into(),
+            ])
+            .spacing(5)
+            .max_width(300);
+
+            let title_bar = ag::TitleBar::new(title)
+                .padding(10);
+                //.style(style::TitleBar { is_focused });
+
+            ag::Content::new(content.view(node, total_nodes))
+                .title_bar(title_bar)
+                //.style(style::Pane { is_focused })
+        })
+
+        // let audio_graph = AudioGraph::new(
+        //     &mut self.nodes,
+        //     |node, content| {
+        //         ag::Content::new(content.view(node, total_nodes))
+        //     })
             .on_drag(Message::Dragged)
             .set_style_sheet(Box::new(audio_graph_style::AudioGraphStyle::new()));
 
@@ -140,6 +174,17 @@ impl  Application for AAIcedApplication {
             .into()
     }
 }
+
+const NODE_ID_COLOR_UNFOCUSED: Color = Color::from_rgb(
+    0xFF as f32 / 255.0,
+    0xC7 as f32 / 255.0,
+    0xC7 as f32 / 255.0,
+);
+const NODE_ID_COLOR_FOCUSED: Color = Color::from_rgb(
+    0xFF as f32 / 255.0,
+    0x47 as f32 / 255.0,
+    0x47 as f32 / 255.0,
+);
 
 struct Content {
     id: usize,

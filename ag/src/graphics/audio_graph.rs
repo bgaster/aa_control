@@ -4,7 +4,7 @@
 use crate::native::*;
 use crate::style::style::*;
 
-use iced_graphics::{Backend, Primitive, Renderer, Background};
+use iced_graphics::{Backend, Primitive, Renderer, Background, defaults};
 use iced_native::{mouse, Point, Rectangle, Layout, Vector, Element, Color};
 
 pub type AudioGraph<'a, Message, Backend> = 
@@ -109,6 +109,7 @@ where
         defaults: &Self::Defaults,
         bounds: Rectangle,
         style_sheet: &<Self as crate::native::audio_graph::Renderer>::Style,
+        title_bar: Option<(&crate::native::title_bar::TitleBar<'_, Message, Self>, Layout<'_>)>,
         body: (&Element<'_, Message, Self>, Layout<'_>),
         cursor_position: Point,
     ) -> Self::Output {
@@ -119,17 +120,119 @@ where
             body.draw(self, defaults, body_layout, cursor_position, &bounds);
 
         let background =  background(bounds, &style);
-        
-        (
-            if let Some(background) = background {
+        if let Some((title_bar, title_bar_layout)) = title_bar {
+            let show_controls = bounds.contains(cursor_position);
+            let is_over_pick_area =
+                title_bar.is_over_pick_area(title_bar_layout, cursor_position);
+
+            let (title_bar_primitive, title_bar_interaction) = title_bar.draw(
+                self,
+                defaults,
+                title_bar_layout,
+                cursor_position,
+                show_controls,
+            );
+
+            (
                 Primitive::Group {
-                    primitives: vec![background, body_primitive],
-                }
-            } else {
-                body_primitive
+                    primitives: vec![
+                        background.unwrap_or(Primitive::None),
+                        title_bar_primitive,
+                        body_primitive,
+                    ],
+                },
+                if is_over_pick_area {
+                    mouse::Interaction::Grab
+                } else if title_bar_interaction > body_interaction {
+                    title_bar_interaction
+                } else {
+                    body_interaction
+                },
+            )
+        } else {
+            (
+                if let Some(background) = background {
+                    Primitive::Group {
+                        primitives: vec![background, body_primitive],
+                    }
+                } else {
+                    body_primitive
+                },
+                body_interaction,
+            )
+        }
+        // (
+        //     if let Some(background) = background {
+        //         Primitive::Group {
+        //             primitives: vec![background, body_primitive],
+        //         }
+        //     } else {
+        //         body_primitive
+        //     },
+        //     body_interaction,
+        // )
+    }
+
+    fn draw_title_bar<Message>(
+        &mut self,
+        defaults: &Self::Defaults,
+        bounds: Rectangle,
+        style_sheet: &<Self as crate::native::audio_graph::Renderer>::Style,
+        content: (&Element<'_, Message, Self>, Layout<'_>),
+        controls: Option<(&Element<'_, Message, Self>, Layout<'_>)>,
+        cursor_position: Point,
+    ) -> Self::Output {
+        let style = style_sheet.style();
+        let (title_content, title_layout) = content;
+
+        let defaults = Self::Defaults {
+            text: defaults::Text {
+                //color: style.text_color.unwrap_or(defaults.text.color),
+                color: defaults.text.color, // TODO: Fix this up to use AudioWidget Style
             },
-            body_interaction,
-        )
+        };
+
+        let background = background(bounds, &style);
+
+        let (title_primitive, title_interaction) = title_content.draw(
+            self,
+            &defaults,
+            title_layout,
+            cursor_position,
+            &bounds,
+        );
+
+        if let Some((controls, controls_layout)) = controls {
+            let (controls_primitive, controls_interaction) = controls.draw(
+                self,
+                &defaults,
+                controls_layout,
+                cursor_position,
+                &bounds,
+            );
+
+            (
+                Primitive::Group {
+                    primitives: vec![
+                        background.unwrap_or(Primitive::None),
+                        title_primitive,
+                        controls_primitive,
+                    ],
+                },
+                controls_interaction.max(title_interaction),
+            )
+        } else {
+            (
+                if let Some(background) = background {
+                    Primitive::Group {
+                        primitives: vec![background, title_primitive],
+                    }
+                } else {
+                    title_primitive
+                },
+                title_interaction,
+            )
+        }
     }
 }
     

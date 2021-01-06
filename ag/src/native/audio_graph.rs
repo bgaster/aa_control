@@ -189,7 +189,7 @@ where
                 let mut region = regions.get(node)?;
                 let size = Size::new(region.width, region.height);
 
-                println!("g {} {:?}", i, node);
+                println!("g {} {:?} {:?}", i, node, region);
 
                 let mut node =
                     element.layout(renderer, &layout::Limits::new(size, size));
@@ -371,11 +371,28 @@ pub trait Renderer: iced_native::Renderer + iced_native::container::Renderer + S
         defaults: &Self::Defaults,
         bounds: Rectangle,
         style: &<Self as super::audio_graph::Renderer>::Style,
+        title_bar: Option<(&super::title_bar::TitleBar<'_, Message, Self>, Layout<'_>)>,
         body: (&Element<'_, Message, Self>, Layout<'_>),
         cursor_position: Point,
     ) -> Self::Output;
 
-    // TODO: add title bar and stuff
+    /// Draws a [`TitleBar`].
+    ///
+    /// It receives:
+    /// - the bounds, style of the [`TitleBar`]
+    /// - the style of the [`TitleBar`]
+    /// - the content of the [`TitleBar`] with its layout
+    /// - the controls of the [`TitleBar`] with their [`Layout`], if any
+    /// - the cursor position
+    fn draw_title_bar<Message>(
+        &mut self,
+        defaults: &Self::Defaults,
+        bounds: Rectangle,
+        style: &<Self as super::audio_graph::Renderer>::Style,
+        content: (&Element<'_, Message, Self>, Layout<'_>),
+        controls: Option<(&Element<'_, Message, Self>, Layout<'_>)>,
+        cursor_position: Point,
+    ) -> Self::Output;
 }
 
 impl<'a, Message, Renderer> From<AudioGraph<'a, Message, Renderer>>

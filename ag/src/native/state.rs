@@ -31,7 +31,7 @@ impl<T> State<T> {
     pub fn new(first_node_state: T) -> (Self, super::node::Node) {
         (
             Self::with_configuration(super::configuration::Configuration::Node(first_node_state)),
-            super::node::Node(0),
+            super::node::Node::new(0),
         )
     }
 
@@ -74,7 +74,7 @@ impl<T> State<T> {
         
         self.internal.last_id = self.internal.last_id.checked_add(1)?;
         let id = self.internal.last_id;
-        let new_node = super::node::Node(id);
+        let new_node = super::node::Node::new(id);
 
         let _ = self.nodes.insert(new_node, state);
 
@@ -91,7 +91,7 @@ impl<T> State<T> {
     ) -> (super::layout_node::LayoutNode, usize) {
         match content {
             super::configuration::Configuration::Node(state) => {
-                let id = super::node::Node(next_id);
+                let id = super::node::Node::new(next_id);
                 let _ = nodes.insert(id, state);
 
                 (super::layout_node::LayoutNode::Node(id), next_id + 1)
