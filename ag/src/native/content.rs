@@ -1,6 +1,6 @@
 use iced_native::{
     event, keyboard, layout, mouse, Clipboard, Element, Event, Hasher, Layout,
-    Length, Point, Rectangle, Size, Widget, container, overlay,
+    Length, Point, Rectangle, Size, Widget, container, overlay, 
 };
 
 use super::title_bar::TitleBar;
@@ -144,6 +144,26 @@ where
         limits: &layout::Limits) -> layout::Node {
         if let Some(title_bar) = &self.title_bar {
             let max_size = limits.max();
+
+            let max_width = match self.body.width() {
+                Length::Units(width) => { 
+                    width as f32
+                }
+                _ => {
+                    max_size.width
+                }
+            };
+
+            let max_height = match self.body.height() {
+                Length::Units(height) => { 
+                    height as f32
+                }
+                _ => {
+                    max_size.height
+                }
+            };
+
+            let max_size = Size::new(max_width, max_width);
 
             let title_bar_layout = title_bar
                 .layout(renderer, &layout::Limits::new(Size::ZERO, max_size));

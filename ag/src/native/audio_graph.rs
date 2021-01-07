@@ -128,7 +128,8 @@ where
                     let origin = cursor_position
                         - Vector::new(node_position.x, node_position.y);
 
-                    self.state.pick_node(node, origin);
+                    //println!("{:?} {:?} {:?}", node_position, cursor_position, origin);
+                    self.state.pick_node(node, origin, cursor_position);
 
                     messages.push(on_drag(DragEvent::Picked { node: *node }));
                 }
@@ -149,6 +150,7 @@ pub enum DragEvent {
     Dropped {
         // The dropped [`Node`].
         node: super::node::Node,
+        diff: Point,
     },
     /// A [`Node`] was picked and then dropped outside of other [`Node`]
     /// boundaries.
@@ -179,27 +181,30 @@ where
         let limits = limits.width(self.width).height(self.height);
         let size = limits.resolve(Size::ZERO);
 
-        let regions = self.state.node_regions(f32::from(self.spacing), size);
+        let regions = self.state.positions();
+        //let regions = self.state.node_regions(f32::from(self.spacing), size);
+
 
         let children = self
             .elements
             .iter()
-            .enumerate()
-            .filter_map(|(i, (node, element))| {
+            .filter_map(|(node, element)| {
                 let mut region = regions.get(node)?;
+                let region = Rectangle {
+                    x: region.x,
+                    y: region.y,
+                    width: 300.0,
+                    height: 300.0
+                };
                 let size = Size::new(region.width, region.height);
+                //let size = Size::new(300.0,300.0);
 
-                println!("g {} {:?} {:?}", i, node, region);
+                //println!("g {:?} {:?}", node, region);
 
                 let mut node =
                     element.layout(renderer, &layout::Limits::new(size, size));
 
-                if i == 1 {
-                    node.move_to(Point::new(region.x+400.0, region.y+30.0));
-                }
-                else {
-                    node.move_to(Point::new(region.x, region.y));
-                }
+                node.move_to(Point::new(region.x, region.y));
 
                 Some(node)
             })
@@ -233,7 +238,7 @@ where
                     }
                 }
                 mouse::Event::ButtonReleased(mouse::Button::Left) => {
-                    if let Some((node, _)) = self.state.picked_node() {
+                    if let Some((node, _, _)) = self.state.picked_node() {
                         if let Some(on_drag) = &self.on_drag {
                             // let mut dropped_region = self
                             //     .elements
@@ -242,8 +247,13 @@ where
                             //     .filter(|(_, layout)| {
                             //         layout.bounds().contains(cursor_position)
                             //     });
-
-                            let event = DragEvent::Dropped { node };
+                            if let Some((id, origin, prev_cursor_position)) = self.state.picked_node() {
+                                println!("Dropped o: {:?} {:?} {:?} {:?}", layout.bounds(), cursor_position, origin, prev_cursor_position);
+                                let diff = cursor_position - Vector::new(prev_cursor_position.x, prev_cursor_position.y);
+                                println!("Dropped o': {:?}", origin);
+                                let event = DragEvent::Dropped { node, diff };
+                                messages.push(on_drag(event));
+                            }
                             
                             // match dropped_region.next() {
                             //     Some(((target, _), _)) if node != *target => {
@@ -255,7 +265,7 @@ where
                             //     _ => DragEvent::Canceled { node },
                             // };
 
-                            messages.push(on_drag(event));
+                           
                         }
 
                         self.state.idle();
@@ -312,7 +322,6 @@ where
 
     fn hash_layout(&self, state: &mut Hasher) {
         use std::hash::Hash;
-
         struct Marker;
         std::any::TypeId::of::<Marker>().hash(state);
 
@@ -353,7 +362,7 @@ pub trait Renderer: iced_native::Renderer + iced_native::container::Renderer + S
         &mut self,
         defaults: &Self::Defaults,
         nodes: &[(Node, Content<'_, Message, Self>)],
-        dragging: Option<(Node, Point)>,
+        dragging: Option<(Node, Point, Point)>,
         layout: Layout<'_>,
         style: &<Self as super::audio_graph::Renderer>::Style,
         cursor_position: Point,

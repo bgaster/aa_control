@@ -20,7 +20,7 @@ where
         &mut self,
         defaults: &Self::Defaults,
         content: &[(node::Node, content::Content<'_, Message, Self>)],
-        dragging: Option<(node::Node, Point)>,
+        dragging: Option<(node::Node, Point, Point)>,
         layout: Layout<'_>,
         style: &<Self as crate::native::audio_graph::Renderer>::Style,
         cursor_position: Point,
@@ -36,6 +36,8 @@ where
         let mut mouse_interaction = mouse::Interaction::default();
         let mut dragged_node = None;
 
+        let ag_bounds = layout.bounds(); 
+
         let mut nodes: Vec<_> = content
             .iter()
             .zip(layout.children())
@@ -48,13 +50,20 @@ where
                     mouse_interaction = new_mouse_interaction;
                 }
 
-                if let Some((dragging, origin)) = dragging {
+                if let Some((dragging, origin, cursor_position)) = dragging {
                     if *id == dragging {
                         dragged_node = Some((i, layout, origin));
                     }
+                    primitive
                 }
-
-                primitive
+                else {
+                    // clip node within audio-graph
+                    Primitive::Clip {
+                        bounds: ag_bounds,
+                        offset: Vector::new(0, 0),
+                        content: Box::new(primitive),
+                    }
+                }
             })
             .collect();
 

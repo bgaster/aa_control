@@ -13,8 +13,8 @@ use std::collections::HashMap;
 #[derive(Debug, Clone)]
 pub enum LayoutNode {
     /// The region of this [`LayoutNode`] is taken by a [`Node`].
-    Node(Node),
-    Nodes(Vec<Node>)
+    Node((Node, Point)),
+    Nodes(Vec<(Node, Point)>)
 }
 
 impl LayoutNode {
@@ -44,10 +44,10 @@ impl LayoutNode {
     pub fn push(ln: Self, node: Node) -> Self {
         match ln {
             LayoutNode::Node(node_prev) => {
-                LayoutNode::Nodes(vec![node_prev, node])
+                LayoutNode::Nodes(vec![node_prev, (node, Point::new(0.0,0.0))])
             },
             LayoutNode::Nodes(mut nodes) => {
-                nodes.push(node);
+                nodes.push((node, Point::new(0.0,0.0)));
                 LayoutNode::Nodes(nodes)
             }
         }
@@ -55,15 +55,15 @@ impl LayoutNode {
 
     fn node(&self) -> Option<Node> {
         match self {
-            LayoutNode::Node(node) => Some(*node),
+            LayoutNode::Node(node) => Some(node.0),
             LayoutNode::Nodes(nodes) => None
         }
     }
 
     fn first_node(&self) -> Node {
         match self {
-            LayoutNode::Node(node) => *node,
-            LayoutNode::Nodes(nodes) => nodes[0]
+            LayoutNode::Node(node) => node.0,
+            LayoutNode::Nodes(nodes) => nodes[0].0
         }
     }
 
@@ -74,13 +74,13 @@ impl LayoutNode {
         regions: &mut HashMap<Node, Rectangle>) {
         match self {
             LayoutNode::Node(node) => {
-                let _ = regions.insert(*node, *current);
+               // let _ = regions.insert(*node, *current);
             }
             LayoutNode::Nodes(nodes) => {
                 nodes
                 .iter()
                 .for_each(|node| {
-                    let _ = regions.insert(*node, *current);
+                 //   let _ = regions.insert(*node, *current);
                 });
             }
         }
@@ -91,13 +91,13 @@ impl std::hash::Hash for LayoutNode {
     fn hash<H: std::hash::Hasher>(&self, state: &mut H) {
         match self {
             LayoutNode::Node(node) => {
-                node.hash(state);
+                node.0.hash(state);
             }
             LayoutNode::Nodes(nodes) => {
                 nodes
                 .iter()
                 .for_each(|node| {
-                    node.hash(state);
+                    node.0.hash(state);
                 });
             }
         }

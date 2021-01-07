@@ -1,6 +1,6 @@
 use ag::{audio_graph::AudioGraph};
 
-use ag::{audio_graph};
+use ag::{audio_graph, DragEvent};
 
 use iced_baseview::{executor, Align, Application, Command, Subscription, WindowSubs};
 use iced_baseview::{
@@ -14,7 +14,7 @@ use iced_audio::{
     HSlider, IntRange, Knob, LogDBRange, Normal, VSlider, XYPad,
 };
 
-use iced_native::{ button, Button, Color };
+use iced_native::{ button, Button, Color, Point };
 
 #[derive(Debug, Clone)]
 pub enum Message {
@@ -48,8 +48,8 @@ impl  Application for AAIcedApplication {
         let db_range = LogDBRange::new(-12.0, 12.0, 0.5.into());
 
         let (mut nodes, _) = 
-            ag::State::new(Content::new(0));
-            nodes.insert(Content::new(1));
+            ag::State::new(Point::new(0.0, 0.0), Content::new(0));
+            nodes.insert(Point::new(400.0,0.0), Content::new(1));
             
         let app = Self {
             db_range,
@@ -99,9 +99,16 @@ impl  Application for AAIcedApplication {
                 info!("VSliderDB: {:.3}", value);
             }
             Message::Close(node) => {
-                info!("Close");
+                info!("Close {:?}", node);
             }
             Message::Dragged(e) => {
+                match e {
+                    ag::DragEvent::Dropped{node, diff} => {
+                        self.nodes.translate(node, diff);
+                    }
+                    _ => {}
+                }
+
                 info!("Dragged {:?}", e);
             }
         }
@@ -239,7 +246,6 @@ impl Content {
             .into()
     }
 }
-
 mod audio_graph_style {
     use ag::style::style::*;
     use iced_native::{ Color };
