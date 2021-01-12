@@ -4,6 +4,7 @@ pub mod content;
 pub mod layout_node;
 pub mod configuration;
 pub mod title_bar;
+pub mod ports;
 
 pub mod audio_graph;
 

@@ -1,8 +1,8 @@
 use ag::{audio_graph::AudioGraph};
 
-use ag::{audio_graph, DragEvent};
+use ag::{audio_graph, DragEvent, Connectors, PortType, Ports};
 
-use iced_baseview::{executor, Align, Application, Command, Subscription, WindowSubs};
+use iced_baseview::{executor, Align, renderer, Application, Command, Subscription, WindowSubs};
 use iced_baseview::{
     Column, Element, Row, Container, Rule, 
     Length, Space, Image, image,
@@ -15,7 +15,7 @@ use iced_audio::{
 };
 
 use iced_native::{ button, Button, Color, Point };
-
+use iced_graphics::{Antialiasing};
 #[derive(Debug, Clone)]
 pub enum Message {
     Frame,
@@ -48,8 +48,12 @@ impl  Application for AAIcedApplication {
         let db_range = LogDBRange::new(-12.0, 12.0, 0.5.into());
 
         let (mut nodes, _) = 
-            ag::State::new(Point::new(0.0, 0.0), Content::new(0));
-            nodes.insert(Point::new(400.0,0.0), Content::new(1));
+            ag::State::new(
+        Point::new(0.0, 0.0), 
+Content::new(0));
+            nodes.insert(
+                Point::new(400.0,0.0), 
+                Content::new(1));
             
         let app = Self {
             db_range,
@@ -69,6 +73,14 @@ impl  Application for AAIcedApplication {
 
 
         (app, Command::none())
+    }
+
+    fn renderer_settings() -> renderer::Settings {
+        renderer::Settings {
+            default_text_size: 10,
+            antialiasing: Some(Antialiasing::MSAAx4),
+            ..renderer::Settings::default()
+        }
     }
 
     fn subscription(
@@ -149,12 +161,21 @@ impl  Application for AAIcedApplication {
             .spacing(5)
             .max_width(300);
 
+            println!("id = {}", content.id);
+
             let title_bar = ag::TitleBar::new(title)
                 .padding(10);
                 //.style(style::TitleBar { is_focused });
 
-            ag::Content::new(content.view(node, total_nodes))
+            let ports = 
+                InputOutputs::new()
+                .inputs(vec![InputOutputs::PMidi, InputOutputs::PAudio])
+                .outputs(vec![InputOutputs::PMidi, InputOutputs::PAudio]);
+
+            ag::Content::new(
+                content.view(node, total_nodes))
                 .title_bar(title_bar)
+                .ports(Ports::new(Box::new(ports)))
                 //.style(style::Pane { is_focused })
         })
 
@@ -244,6 +265,58 @@ impl Content {
             .padding(5)
             .center_y()
             .into()
+    }
+}
+
+struct InputOutputs {
+    inputs: Vec<PortType>,
+    outputs: Vec<PortType>,
+}
+
+impl InputOutputs {
+    pub const PMidi : PortType = PortType::new();
+    pub const PAudio : PortType = PortType::fresh(Self::PMidi);
+
+    pub fn new() -> Self {
+        Self {
+            inputs: Vec::new(),
+            outputs: Vec::new(),
+        }
+    }
+
+    pub fn inputs(self, is: Vec<PortType>) -> Self {
+        Self {
+            inputs: is,
+            outputs: self.outputs,
+        }
+    }
+
+    pub fn outputs(self, outs: Vec<PortType>) -> Self {
+        Self {
+            inputs: self.inputs,
+            outputs: outs,
+        }
+    }
+}
+
+impl Connectors for InputOutputs {
+    fn input_connections(&self) -> usize {
+        0
+    }
+
+    /// number of output connections
+    fn output_connections(&self) -> usize {
+        0
+    }
+
+    /// return the type for a given input port
+    fn input_port_type(&self, index: usize) -> Option<PortType> {
+        self.inputs.get(index).map(|p| *p)
+    }
+
+    /// return the type for a given output port
+    fn output_port_type(&self, index: usize) -> Option<PortType> {
+        self.outputs.get(index).map(|p| *p)
     }
 }
 mod audio_graph_style {
@@ -364,4 +437,8 @@ mod style {
             }
         }
     }
+}
+
+mod connectors {
+    
 }

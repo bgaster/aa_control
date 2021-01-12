@@ -5,7 +5,8 @@ use crate::native::*;
 use crate::style::style::*;
 
 use iced_graphics::{Backend, Primitive, Renderer, Background, defaults};
-use iced_native::{mouse, Point, Rectangle, Layout, Vector, Element, Color};
+use iced_graphics::canvas::{path::Arc, Frame, Path, Stroke};
+use iced_native::{mouse, Point, Rectangle, Layout, Vector, Element, Color, Size};
 
 pub type AudioGraph<'a, Message, Backend> = 
     audio_graph::AudioGraph<'a, Message, Renderer<Backend>>;
@@ -98,10 +99,54 @@ where
                 nodes
             };
 
+            // draw patches
+            let (n1, c1) = &content[0];
+            let (n2, c2) = &content[1];
+
+            let l: Vec<_> = layout.children().collect();
+            
+            let l2 = l[0].bounds();
+            let l1 = l[1].bounds();
+
+            println!("{:?} {:?} {:?}", l1, l2, ag_bounds);
+
+            let p = 
+                if let Some((index, layout, origin)) = dragged_node {
+                    let bounds = layout.bounds();
+
+                    let x = cursor_position.x  - origin.x;
+                    let y = cursor_position.y - origin.y;
+
+                    Path::new(|path| {
+                        path.move_to(Point::new(l1.x + l1.width, l1.y));
+                        path.quadratic_curve_to(
+                            Point::new(l1.x + 80.0 + l1.width, l1.y + 90.0), 
+                            Point::new(x,  y));
+                    })
+                }
+                else {
+                    Path::new(|path| {
+                        path.move_to(Point::new(l1.x + l1.width, l1.y));
+                        path.quadratic_curve_to(
+                            Point::new(l1.x + 80.0 + l1.width, l1.y + 90.0), 
+                            Point::new(l2.x,  l2.y));
+                    })
+                };
+            
+            let mut frame = Frame::new(Size::new(900.0, 900.0));
+
+            // let e_stroke = Stroke {
+            //     width: 6.0,
+            //     color: Color::Black,
+            //     ..Stroke::default()
+            // };
+            frame.stroke(&p, Stroke::default().with_width(4.0));
+
             let bounds = layout.bounds();
             let style = style.active();
             let bg = background(bounds, &style).unwrap();
             primitives.insert(0, bg);
+            primitives.push(frame.into_geometry().into_primitive());
 
         (
             Primitive::Group { primitives },
@@ -170,16 +215,6 @@ where
                 body_interaction,
             )
         }
-        // (
-        //     if let Some(background) = background {
-        //         Primitive::Group {
-        //             primitives: vec![background, body_primitive],
-        //         }
-        //     } else {
-        //         body_primitive
-        //     },
-        //     body_interaction,
-        // )
     }
 
     fn draw_title_bar<Message>(

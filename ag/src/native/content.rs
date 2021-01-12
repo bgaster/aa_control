@@ -4,6 +4,7 @@ use iced_native::{
 };
 
 use super::title_bar::TitleBar;
+use super::ports::Ports;
 
 /// The content of a [`Node`].
 ///
@@ -11,6 +12,7 @@ use super::title_bar::TitleBar;
 #[allow(missing_debug_implementations)]
 pub struct Content<'a, Message, Renderer: super::audio_graph::Renderer> {
     title_bar: Option<TitleBar<'a, Message, Renderer>>,
+    ports: Option<Ports<Renderer>>,
     body: Element<'a, Message, Renderer>,
     style: <Renderer as super::audio_graph::Renderer>::Style,
 }
@@ -21,9 +23,11 @@ where
     Renderer: super::audio_graph::Renderer,
 {
     /// Creates a new [`Content`] with the provided body.
-    pub fn new(body: impl Into<Element<'a, Message, Renderer>>) -> Self {
+    pub fn new(
+        body: impl Into<Element<'a, Message, Renderer>>) -> Self {
         Self {
             title_bar: None,
+            ports: None,
             body: body.into(),
             style: Default::default(),
         }
@@ -32,9 +36,16 @@ where
     /// Sets the [`TitleBar`] of this [`Content`].
     pub fn title_bar(
         mut self,
-        title_bar: TitleBar<'a, Message, Renderer>,
-    ) -> Self {
+        title_bar: TitleBar<'a, Message, Renderer>) -> Self {
         self.title_bar = Some(title_bar);
+        self
+    }
+
+    /// Sets the [`Ports`] of this [`Content`].
+    pub fn ports(
+        mut self,
+        ports: Ports<Renderer>) -> Self {
+        self.ports = Some(ports);
         self
     }
 

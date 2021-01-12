@@ -28,4 +28,6 @@ pub use native::state::State;
 pub use native::content::Content;
 pub use native::audio_graph::DragEvent;
 pub use native::title_bar::*;
+pub use native::layout_node::*;
+pub use native::ports::*;
 pub use style::*;
