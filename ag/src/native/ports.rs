@@ -5,7 +5,7 @@ use iced_native::{
 
 #[allow(missing_debug_implementations)]
 pub struct Ports<Renderer: super::audio_graph::Renderer> {
-    ports: Box<dyn Connectors>,
+    pub(crate) ports: Box<dyn Connectors>,
     padding: u16,
     style: <Renderer as super::audio_graph::Renderer>::Style,
 }
@@ -40,6 +40,61 @@ where
     pub(crate) fn hash_layout(&self, hasher: &mut Hasher) {
         use std::hash::Hash;
         self.padding.hash(hasher);
+        self.ports.inputs().for_each(|p|p.hash(hasher));
+        self.ports.outputs().for_each(|p|p.hash(hasher));
+    }
+
+    pub fn draw(
+        &self,
+        renderer: &mut Renderer,
+        defaults: &Renderer::Defaults,
+        input_bounds: Rectangle,
+        output_bounds: Rectangle,
+        cursor_position: Point) -> Renderer::Output {
+            renderer.draw_ports(
+                defaults,
+                input_bounds,
+                output_bounds,
+                &self.style,
+                self.ports.input_connections(),
+                cursor_position,
+            )
+    }
+
+    pub(crate) fn layout_inputs(
+        &self,
+        _renderer: &Renderer,
+        limits: &layout::Limits) -> Option<layout::Node> {
+        if self.ports.input_connections() > 0 {
+            let padding = f32::from(self.padding);
+            let limits = limits.pad(padding);
+            let max_size = limits.max();
+
+            let connector_size = Size::new(40.0, max_size.height);
+            
+            Some(layout::Node::new(connector_size))
+        }
+        else {
+            None
+        }
+    }
+
+    pub(crate) fn layout_outputs(
+        &self,
+        _renderer: &Renderer,
+        limits: &layout::Limits) -> Option<layout::Node> {
+            if self.ports.output_connections() > 0 {
+            let padding = f32::from(self.padding);
+            let limits = limits.pad(padding);
+            let max_size = limits.max();
+
+            let connector_size = Size::new(40.0, max_size.height);
+            
+            Some(layout::Node::new(connector_size))
+        }
+        else {
+            None
+        }
     }
 }
 
@@ -68,26 +123,12 @@ pub trait Connectors {
 
     /// return the type for a given output port
     fn output_port_type(&self, index: usize) -> Option<PortType>;
+
+    /// iterator over input ports
+    fn inputs(&self) -> std::slice::Iter<'_, PortType> ;
+
+    /// iterator over output ports
+    fn outputs(&self) -> std::slice::Iter<'_, PortType> ;
 }
-
-struct ZeroPorts;
-
-impl Connectors for ZeroPorts {
-    fn input_connections(&self) -> usize {
-        0
-    }
-
-    fn output_connections(&self) -> usize {
-        0
-    }
-
-    fn input_port_type(&self, _index: usize) -> Option<PortType> {
-        None
-    }
-
-    fn output_port_type(&self, _index: usize) -> Option<PortType> {
-        None
-    }
-} 
 
 

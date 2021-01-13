@@ -108,7 +108,7 @@ where
             let l2 = l[0].bounds();
             let l1 = l[1].bounds();
 
-            println!("{:?} {:?} {:?}", l1, l2, ag_bounds);
+            //println!("{:?} {:?} {:?}", l1, l2, ag_bounds);
 
             let p = 
                 if let Some((index, layout, origin)) = dragged_node {
@@ -164,6 +164,7 @@ where
         bounds: Rectangle,
         style_sheet: &<Self as crate::native::audio_graph::Renderer>::Style,
         title_bar: Option<(&crate::native::title_bar::TitleBar<'_, Message, Self>, Layout<'_>)>,
+        ports: Option<(&crate::native::ports::Ports<Self>, Rectangle, Rectangle)>,
         body: (&Element<'_, Message, Self>, Layout<'_>),
         cursor_position: Point,
     ) -> Self::Output {
@@ -187,22 +188,51 @@ where
                 show_controls,
             );
 
-            (
-                Primitive::Group {
-                    primitives: vec![
-                        background.unwrap_or(Primitive::None),
-                        title_bar_primitive,
-                        body_primitive,
-                    ],
-                },
-                if is_over_pick_area {
-                    mouse::Interaction::Grab
-                } else if title_bar_interaction > body_interaction {
-                    title_bar_interaction
-                } else {
-                    body_interaction
-                },
-            )
+            if let Some((ports, input_bounds, output_bounds)) = ports {
+                let (ports_primitives, ports_interaction) = ports.draw(
+                    self,
+                    defaults,
+                    input_bounds,
+                    output_bounds,
+                    cursor_position,
+                );
+
+                (
+                    Primitive::Group {
+                        primitives: vec![
+                            background.unwrap_or(Primitive::None),
+                            title_bar_primitive,
+                            ports_primitives,
+                            body_primitive,
+                        ],
+                    },
+                    if is_over_pick_area {
+                        mouse::Interaction::Grab
+                    } else if title_bar_interaction > body_interaction {
+                        title_bar_interaction
+                    } else {
+                        body_interaction
+                    },
+                )
+            }
+            else {
+                (
+                    Primitive::Group {
+                        primitives: vec![
+                            background.unwrap_or(Primitive::None),
+                            title_bar_primitive,
+                            body_primitive,
+                        ],
+                    },
+                    if is_over_pick_area {
+                        mouse::Interaction::Grab
+                    } else if title_bar_interaction > body_interaction {
+                        title_bar_interaction
+                    } else {
+                        body_interaction
+                    },
+                )
+            }
         } else {
             (
                 if let Some(background) = background {
@@ -277,6 +307,61 @@ where
                 title_interaction,
             )
         }
+    }
+
+    fn draw_ports(
+        &mut self,
+        defaults: &Self::Defaults,
+        input_bounds: Rectangle,
+        output_bounds: Rectangle,
+        style_sheet: &<Self as crate::native::audio_graph::Renderer>::Style,
+        num: usize,
+        cursor_position: Point,
+    ) -> Self::Output {
+        let mut mouse_interaction = mouse::Interaction::default();
+        
+        let inputs_primitives = Primitive::Quad {
+            bounds: input_bounds,
+            background: Background::Color(Color::from_rgba(
+                0xF0 as f32 / 255.0,
+                0xF3 as f32 / 255.0,
+                0xA5 as f32 / 255.0,
+                1.0
+            )),
+            border_radius: 1.0,
+            border_width: 0.5,
+            border_color: Color::from_rgba(
+                0xF2 as f32 / 255.0,
+                0xF3 as f32 / 255.0,
+                0xF5 as f32 / 255.0,
+                1.0
+            ),
+        };
+
+        let outputs_primitives = Primitive::Quad {
+            bounds: output_bounds,
+            background: Background::Color(Color::from_rgba(
+                0xF0 as f32 / 255.0,
+                0xF3 as f32 / 255.0,
+                0xA5 as f32 / 255.0,
+                1.0
+            )),
+            border_radius: 1.0,
+            border_width: 0.5,
+            border_color: Color::from_rgba(
+                0xF2 as f32 / 255.0,
+                0xF3 as f32 / 255.0,
+                0xF5 as f32 / 255.0,
+                1.0
+            ),
+        };
+
+        (
+            Primitive::Group {
+                primitives: vec![inputs_primitives, outputs_primitives],
+            },
+            mouse_interaction
+        )
     }
 }
     

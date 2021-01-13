@@ -72,24 +72,78 @@ where
 
         if let Some(title_bar) = &self.title_bar {
             let mut children = layout.children();
+            println!("hello 2");
             let title_bar_layout = children.next().unwrap();
-            let body_layout = children.next().unwrap();
+           
+            if let Some(ports) = &self.ports {
+                println!("hello 1");
+                let input_layout = children.next().unwrap();
+                let output_layout = children.next().unwrap();
+                
+                let input_bounds = input_layout.bounds();
+                let output_bounds = output_layout.bounds();
 
-            renderer.draw_node(
-                defaults,
-                layout.bounds(),
-                &self.style,
-                Some((title_bar, title_bar_layout)),
-                (&self.body, body_layout),
-                cursor_position)
+                let body_layout = children.next().unwrap();
+                println!("hello 3");
+                // let mut input_bounds = body_layout.bounds();
+                // input_bounds.x = input_bounds.x - 40.0;
+                // input_bounds.width = 40.0;
+
+                // let mut output_bounds = body_layout.bounds();
+                // output_bounds.x = output_bounds.x + (output_bounds.width);
+                // output_bounds.width = 40.0;
+
+                renderer.draw_node(
+                    defaults,
+                    layout.bounds(),
+                    &self.style,
+                    Some((title_bar, title_bar_layout)),
+                    Some((ports, input_bounds, output_bounds)),
+                    (&self.body, body_layout),
+                    cursor_position)
+            }
+            else {
+                let body_layout = children.next().unwrap();
+
+                renderer.draw_node(
+                    defaults,
+                    layout.bounds(),
+                    &self.style,
+                    Some((title_bar, title_bar_layout)),
+                    None,
+                    (&self.body, body_layout),
+                    cursor_position)
+            }
         } else {
-            renderer.draw_node(
-                defaults,
-                layout.bounds(),
-                &self.style,
-                None,
-                (&self.body, layout),
-                cursor_position)
+
+            if let Some(ports) = &self.ports {
+                let mut input_bounds = layout.bounds();
+                input_bounds.x = input_bounds.x - 40.0;
+                input_bounds.width = 40.0;
+
+                let mut output_bounds = layout.bounds();
+                output_bounds.x = output_bounds.x + (output_bounds.width - 40.0);
+                output_bounds.width = 40.0;
+
+                renderer.draw_node(
+                    defaults,
+                    layout.bounds(),
+                    &self.style,
+                    None,
+                    Some((ports, input_bounds, output_bounds)),
+                    (&self.body, layout),
+                    cursor_position)
+            }
+            else {
+                renderer.draw_node(
+                    defaults,
+                    layout.bounds(),
+                    &self.style,
+                    None,
+                    None,
+                    (&self.body, layout),
+                    cursor_position)
+            }
         }
     }
 
@@ -174,38 +228,186 @@ where
                 }
             };
 
-            let max_size = Size::new(max_width, max_width);
+            let max_size = Size::new(max_width, max_width); //TODO: this looks wrong max_width twice!
 
             let title_bar_layout = title_bar
                 .layout(renderer, &layout::Limits::new(Size::ZERO, max_size));
 
             let title_bar_size = title_bar_layout.size();
 
-            let mut body_layout = self.body.layout(
-                renderer,
-                &layout::Limits::new(
-                    Size::ZERO,
-                    Size::new(
-                        max_size.width,
-                        max_size.height - title_bar_size.height,
+            if let Some(ports) = &self.ports {
+                let mut input_layout = ports.layout_inputs(
+                    renderer, 
+                    &layout::Limits::new(
+                        Size::ZERO,
+                        Size::new(
+                            max_size.width,
+                            max_size.height - title_bar_size.height,
+                        ),
+                    ));
+
+                let mut output_layout = ports.layout_outputs(
+                    renderer, 
+                    &layout::Limits::new(
+                        Size::ZERO,
+                        Size::new(
+                            max_size.width,
+                            max_size.height - title_bar_size.height,
+                        ),
+                    ));
+
+                let input_width = input_layout.as_ref().map_or(0.0, |l| l.bounds().width);
+                let output_width = output_layout.as_ref().map_or(0.0, |l| l.bounds().width);
+
+                input_layout.as_mut().map(|l| l.move_to(Point::new(0.0, title_bar_size.height)));
+                output_layout.as_mut().map(|l| l.move_to(Point::new(max_size.width - output_width, title_bar_size.height)));
+
+                let input_width = input_layout.as_ref().map_or(0.0, |l| l.bounds().width);
+                let output_width = output_layout.as_ref().map_or(0.0, |l| l.bounds().width);
+
+                let mut body_layout = self.body.layout(
+                    renderer,
+                    &layout::Limits::new(
+                        Size::ZERO,
+                        Size::new(
+                            max_size.width - input_width - output_width,
+                            max_size.height - title_bar_size.height,
+                        ),
                     ),
-                ),
-            );
-
-            body_layout.move_to(Point::new(0.0, title_bar_size.height));
-
-            layout::Node::with_children(
-                max_size,
-                vec![title_bar_layout, body_layout],
-            )
+                );
+    
+                body_layout.move_to(Point::new(input_width, title_bar_size.height));
+    
+                if let Some(input_layout) = input_layout {
+                    if let Some(output_layout) = output_layout {
+                        layout::Node::with_children(
+                            max_size,
+                            vec![title_bar_layout, input_layout, output_layout, body_layout],
+                        )
+                    }
+                    else {
+                        layout::Node::with_children(
+                            max_size,
+                            vec![title_bar_layout, input_layout, body_layout],
+                        )
+                    }
+                }
+                else {
+                    if let Some(output_layout) = output_layout {
+                        layout::Node::with_children(
+                            max_size,
+                            vec![title_bar_layout, output_layout, body_layout],
+                        )
+                    }
+                    else {
+                        layout::Node::with_children(
+                            max_size,
+                            vec![title_bar_layout, body_layout],
+                        )
+                    }
+                }
+            }
+            else {
+                let mut body_layout = self.body.layout(
+                    renderer,
+                    &layout::Limits::new(
+                        Size::ZERO,
+                        Size::new(
+                            max_size.width,
+                            max_size.height - title_bar_size.height,
+                        ),
+                    ),
+                );
+    
+                body_layout.move_to(Point::new(0.0, title_bar_size.height));
+    
+                layout::Node::with_children(
+                    max_size,
+                    vec![title_bar_layout, body_layout],
+                )
+            }
         } else {
-            self.body.layout(renderer, limits)
+            if let Some(ports) = &self.ports {
+                let max_size = limits.max();
+
+                let max_width = match self.body.width() {
+                    Length::Units(width) => { 
+                        width as f32
+                    }
+                    _ => {
+                        max_size.width
+                    }
+                };
+    
+                let max_height = match self.body.height() {
+                    Length::Units(height) => { 
+                        height as f32
+                    }
+                    _ => {
+                        max_size.height
+                    }
+                };
+
+                let max_size = Size::new(max_width, max_width);
+
+                let input_layout = ports.layout_inputs(renderer, limits);
+                let output_layout = ports.layout_outputs(renderer, limits);
+
+                let input_width = input_layout.as_ref().map_or(0.0, |l| l.bounds().width);
+                let output_width = output_layout.as_ref().map_or(0.0, |l| l.bounds().width);
+
+                let mut body_layout = self.body.layout(
+                    renderer,
+                    &layout::Limits::new(
+                        Size::ZERO,
+                        Size::new(
+                            max_size.width - input_width - output_width,
+                            max_size.height,
+                        ),
+                    ),
+                );
+    
+                body_layout.move_to(Point::new(input_width, 0.0));
+
+                if let Some(input_layout) = input_layout {
+                    if let Some(output_layout) = output_layout {
+                        layout::Node::with_children(
+                            max_size,
+                            vec![input_layout, output_layout, body_layout],
+                        )
+                    }
+                    else {
+                        layout::Node::with_children(
+                            max_size,
+                            vec![input_layout, body_layout],
+                        )
+                    }
+                }
+                else {
+                    if let Some(output_layout) = output_layout {
+                        layout::Node::with_children(
+                            max_size,
+                            vec![output_layout, body_layout],
+                        )
+                    }
+                    else {
+                        self.body.layout(renderer, limits)
+                    }
+                }
+            }
+            else {
+                self.body.layout(renderer, limits)
+            }
         }
     }
 
     pub(crate) fn hash_layout(&self, state: &mut Hasher) {
         if let Some(title_bar) = &self.title_bar {
             title_bar.hash_layout(state);
+        }
+
+        if let Some(ports) = &self.ports {
+            ports.hash_layout(state);
         }
 
         self.body.hash_layout(state);
@@ -222,9 +424,32 @@ where
             // Overlays only allowed in the pane body, for now at least.
             let _title_bar_layout = children.next();
 
+            if let Some(ports) = &self.ports {
+                if ports.ports.input_connections() > 0 {
+                    let _inputs_layout = children.next();
+                }
+                if ports.ports.output_connections() > 0 {
+                    let _outputs_layout = children.next();
+                }
+            }
+
             children.next()?
         } else {
-            layout
+            if let Some(ports) = &self.ports {
+                let mut children = layout.children();
+
+                if ports.ports.input_connections() > 0 {
+                    let _inputs_layout = children.next();
+                }
+                if ports.ports.output_connections() > 0 {
+                    let _outputs_layout = children.next();
+                }
+
+                children.next()?
+            }
+            else {
+                layout
+            }
         };
 
         self.body.overlay(body_layout)

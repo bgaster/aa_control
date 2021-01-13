@@ -161,7 +161,7 @@ Content::new(0));
             .spacing(5)
             .max_width(300);
 
-            println!("id = {}", content.id);
+           // println!("id = {}", content.id);
 
             let title_bar = ag::TitleBar::new(title)
                 .padding(10);
@@ -301,12 +301,12 @@ impl InputOutputs {
 
 impl Connectors for InputOutputs {
     fn input_connections(&self) -> usize {
-        0
+        self.inputs.len()
     }
 
     /// number of output connections
     fn output_connections(&self) -> usize {
-        0
+        self.outputs.len()
     }
 
     /// return the type for a given input port
@@ -317,6 +317,14 @@ impl Connectors for InputOutputs {
     /// return the type for a given output port
     fn output_port_type(&self, index: usize) -> Option<PortType> {
         self.outputs.get(index).map(|p| *p)
+    }
+
+    fn inputs(&self) -> std::slice::Iter<'_, PortType> {
+        self.inputs.iter()
+    }
+
+    fn outputs(&self) -> std::slice::Iter<'_, PortType> {
+        self.outputs.iter()
     }
 }
 mod audio_graph_style {
