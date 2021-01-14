@@ -72,11 +72,9 @@ where
 
         if let Some(title_bar) = &self.title_bar {
             let mut children = layout.children();
-            println!("hello 2");
             let title_bar_layout = children.next().unwrap();
            
             if let Some(ports) = &self.ports {
-                println!("hello 1");
                 let input_layout = children.next().unwrap();
                 let output_layout = children.next().unwrap();
                 
@@ -84,21 +82,13 @@ where
                 let output_bounds = output_layout.bounds();
 
                 let body_layout = children.next().unwrap();
-                println!("hello 3");
-                // let mut input_bounds = body_layout.bounds();
-                // input_bounds.x = input_bounds.x - 40.0;
-                // input_bounds.width = 40.0;
-
-                // let mut output_bounds = body_layout.bounds();
-                // output_bounds.x = output_bounds.x + (output_bounds.width);
-                // output_bounds.width = 40.0;
 
                 renderer.draw_node(
                     defaults,
                     layout.bounds(),
                     &self.style,
                     Some((title_bar, title_bar_layout)),
-                    Some((ports, input_bounds, output_bounds)),
+                    Some((ports, input_layout, output_layout)),
                     (&self.body, body_layout),
                     cursor_position)
             }
@@ -115,22 +105,17 @@ where
                     cursor_position)
             }
         } else {
-
             if let Some(ports) = &self.ports {
-                let mut input_bounds = layout.bounds();
-                input_bounds.x = input_bounds.x - 40.0;
-                input_bounds.width = 40.0;
-
-                let mut output_bounds = layout.bounds();
-                output_bounds.x = output_bounds.x + (output_bounds.width - 40.0);
-                output_bounds.width = 40.0;
-
+                let mut children = layout.children();
+                let input_layout = children.next().unwrap();
+                let output_layout = children.next().unwrap();
+              
                 renderer.draw_node(
                     defaults,
                     layout.bounds(),
                     &self.style,
                     None,
-                    Some((ports, input_bounds, output_bounds)),
+                    Some((ports, input_layout, output_layout)),
                     (&self.body, layout),
                     cursor_position)
             }
@@ -186,9 +171,24 @@ where
                 clipboard,
             );
 
+            if self.ports.is_some() {
+                let _input_layout = children.next().unwrap();
+                let _output_layout = children.next().unwrap();
+            }
+
             children.next().unwrap()
         } else {
-            layout
+            if self.ports.is_some() {
+                let mut children = layout.children();
+
+                let _input_layout = children.next().unwrap();
+                let _output_layout = children.next().unwrap();
+
+                children.next().unwrap()
+            }
+            else {
+                layout
+            }
         };
 
         let body_status = self.body.on_event(
@@ -228,7 +228,7 @@ where
                 }
             };
 
-            let max_size = Size::new(max_width, max_width); //TODO: this looks wrong max_width twice!
+            let max_size = Size::new(max_width, max_height); //TODO: this looks wrong max_width twice!
 
             let title_bar_layout = title_bar
                 .layout(renderer, &layout::Limits::new(Size::ZERO, max_size));
@@ -261,9 +261,6 @@ where
 
                 input_layout.as_mut().map(|l| l.move_to(Point::new(0.0, title_bar_size.height)));
                 output_layout.as_mut().map(|l| l.move_to(Point::new(max_size.width - output_width, title_bar_size.height)));
-
-                let input_width = input_layout.as_ref().map_or(0.0, |l| l.bounds().width);
-                let output_width = output_layout.as_ref().map_or(0.0, |l| l.bounds().width);
 
                 let mut body_layout = self.body.layout(
                     renderer,

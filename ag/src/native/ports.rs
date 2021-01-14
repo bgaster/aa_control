@@ -48,8 +48,8 @@ where
         &self,
         renderer: &mut Renderer,
         defaults: &Renderer::Defaults,
-        input_bounds: Rectangle,
-        output_bounds: Rectangle,
+        input_bounds: Layout<'_>,
+        output_bounds: Layout<'_>,
         cursor_position: Point) -> Renderer::Output {
             renderer.draw_ports(
                 defaults,

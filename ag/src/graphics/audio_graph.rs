@@ -164,7 +164,7 @@ where
         bounds: Rectangle,
         style_sheet: &<Self as crate::native::audio_graph::Renderer>::Style,
         title_bar: Option<(&crate::native::title_bar::TitleBar<'_, Message, Self>, Layout<'_>)>,
-        ports: Option<(&crate::native::ports::Ports<Self>, Rectangle, Rectangle)>,
+        ports: Option<(&crate::native::ports::Ports<Self>, Layout<'_>, Layout<'_>)>,
         body: (&Element<'_, Message, Self>, Layout<'_>),
         cursor_position: Point,
     ) -> Self::Output {
@@ -312,8 +312,8 @@ where
     fn draw_ports(
         &mut self,
         defaults: &Self::Defaults,
-        input_bounds: Rectangle,
-        output_bounds: Rectangle,
+        input_layout: Layout<'_>,
+        output_layout: Layout<'_>,
         style_sheet: &<Self as crate::native::audio_graph::Renderer>::Style,
         num: usize,
         cursor_position: Point,
@@ -321,7 +321,7 @@ where
         let mut mouse_interaction = mouse::Interaction::default();
         
         let inputs_primitives = Primitive::Quad {
-            bounds: input_bounds,
+            bounds: input_layout.bounds(),
             background: Background::Color(Color::from_rgba(
                 0xF0 as f32 / 255.0,
                 0xF3 as f32 / 255.0,
@@ -339,7 +339,7 @@ where
         };
 
         let outputs_primitives = Primitive::Quad {
-            bounds: output_bounds,
+            bounds: output_layout.bounds(),
             background: Background::Color(Color::from_rgba(
                 0xF0 as f32 / 255.0,
                 0xF3 as f32 / 255.0,

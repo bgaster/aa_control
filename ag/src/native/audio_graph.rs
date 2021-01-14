@@ -310,7 +310,6 @@ where
         cursor_position: Point,
         _viewport: &Rectangle,
     ) -> Renderer::Output {
-        println!("in here");
         self::Renderer::draw(
             renderer,
             defaults,
@@ -382,7 +381,7 @@ pub trait Renderer: iced_native::Renderer + iced_native::container::Renderer + S
         bounds: Rectangle,
         style: &<Self as super::audio_graph::Renderer>::Style,
         title_bar: Option<(&super::title_bar::TitleBar<'_, Message, Self>, Layout<'_>)>,
-        ports: Option<(&super::ports::Ports<Self>, Rectangle, Rectangle)>,
+        ports: Option<(&super::ports::Ports<Self>, Layout<'_>, Layout<'_>)>,
         body: (&Element<'_, Message, Self>, Layout<'_>),
         cursor_position: Point,
     ) -> Self::Output;
@@ -415,8 +414,8 @@ pub trait Renderer: iced_native::Renderer + iced_native::container::Renderer + S
     fn draw_ports(
         &mut self,
         defaults: &Self::Defaults,
-        input_bounds: Rectangle,
-        output_bounds: Rectangle,
+        input_layout: Layout<'_>,
+        output_layout: Layout<'_>,
         style: &<Self as super::audio_graph::Renderer>::Style,
         num: usize,
         cursor_position: Point,
